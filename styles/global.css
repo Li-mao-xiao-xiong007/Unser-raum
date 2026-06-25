@@ -1,0 +1,333 @@
+/* ============================================================
+   据点（Unser Raum）全局样式
+   基于 UI 风格指南 + unser-raum.html
+   ============================================================ */
+
+:root {
+  --primary: #4A3728;
+  --secondary: #6B5B4E;
+  --accent: #D4875E;
+  --background: #FDFBF9;
+  --floor: #E8E0D8;
+  --wall: #D8CFC5;
+  --text-primary: #3D2E24;
+  --text-secondary: #7A6B5E;
+  --corridor-bg: #E8E0D8;
+  --corridor-strip: #DDD5CC;
+
+  /* 房间色块 */
+  --room-dining: #F5E6D3;
+  --room-dining-light: #EDD9C4;
+  --room-entryway: #FAD6A5;
+  --room-entryway-light: #F5C78A;
+  --room-kitchen: #A5D6A7;
+  --room-kitchen-light: #81C784;
+  --room-living: #FFCC80;
+  --room-living-light: #FFB74D;
+  --room-study: #D4E2C4;
+  --room-study-light: #B8D4A0;
+  --room-bedroom: #E8C4C4;
+  --room-bedroom-light: #DBA8A8;
+  --room-balcony: #C8E6C9;
+  --room-balcony-light: #A5D6A7;
+  --room-bathroom: #D4E1E8;
+  --room-bathroom-light: #B8D4E0;
+
+  /* 间距 */
+  --space-xs: 8px;
+  --space-sm: 16px;
+  --space-md: 24px;
+  --space-lg: 32px;
+  --space-xl: 48px;
+
+  /* 圆角 */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* 阴影（暖色系） */
+  --shadow-sm: 0 2px 8px rgba(74, 55, 40, 0.08);
+  --shadow-md: 0 4px 16px rgba(74, 55, 40, 0.12);
+  --shadow-lg: 0 8px 32px rgba(74, 55, 40, 0.16);
+
+  /* 动画 */
+  --ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 200ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+
+  /* 作者色 */
+  --helle-color: #E8A87C;
+  --helle-bg: #FFF3E8;
+  --kruger-color: #7DA87B;
+  --kruger-bg: #EFF8F0;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Noto Sans SC", -apple-system, sans-serif;
+  background-color: var(--background);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* 容器 */
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: var(--space-lg) var(--space-md);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 导航 */
+.nav {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.nav-link {
+  font-size: 0.9375rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-md);
+  transition: background var(--duration-fast) var(--ease-out),
+              color var(--duration-fast) var(--ease-out);
+}
+
+.nav-link:hover {
+  background: var(--floor);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.nav-link.active {
+  background: var(--accent);
+  color: white;
+}
+
+/* 标题 */
+.main-title {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 3rem;
+  font-weight: 600;
+  font-style: italic;
+  color: var(--primary);
+  letter-spacing: 0.05em;
+  text-align: center;
+  margin-bottom: var(--space-xs);
+}
+
+.sub-title {
+  font-family: "Noto Sans SC", sans-serif;
+  font-size: 1rem;
+  font-weight: 300;
+  color: var(--text-secondary);
+  letter-spacing: 0.3em;
+  text-align: center;
+  margin-bottom: var(--space-xl);
+}
+
+/* 卡片 */
+.card {
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-md);
+  transition: box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* 标签 */
+.tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background: var(--floor);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  margin-right: 4px;
+  margin-bottom: 4px;
+}
+
+/* 作者标识 */
+.author-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8125rem;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.author-badge.helle {
+  background: var(--helle-bg);
+  color: var(--helle-color);
+}
+
+.author-badge.kruger {
+  background: var(--kruger-bg);
+  color: var(--kruger-color);
+}
+
+/* 按钮 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  padding: var(--space-xs) var(--space-sm);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #C07A54;
+}
+
+.btn-secondary {
+  background: var(--floor);
+  color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+  background: var(--wall);
+}
+
+.btn-danger {
+  background: #E8C4C4;
+  color: #8B4513;
+}
+
+.btn-danger:hover {
+  background: #DBA8A8;
+}
+
+.btn-sm {
+  font-size: 0.8125rem;
+  padding: 4px 10px;
+}
+
+/* 输入框 */
+.input {
+  font-family: inherit;
+  font-size: 0.9375rem;
+  padding: var(--space-xs) var(--space-sm);
+  border: 1.5px solid var(--wall);
+  border-radius: var(--radius-md);
+  background: white;
+  color: var(--text-primary);
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.input::placeholder {
+  color: #B8AFA5;
+}
+
+textarea.input {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.6;
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: var(--space-xl);
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+}
+
+/* 骨架屏 */
+.skeleton {
+  background: linear-gradient(90deg, var(--floor) 25%, #F0EBE3 50%, var(--floor) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-md);
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* 页面入场动画 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp var(--duration-slow) var(--ease-out) both;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .main-title {
+    font-size: 2.5rem;
+  }
+
+  .container {
+    padding: var(--space-md) var(--space-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .main-title {
+    font-size: 2rem;
+  }
+
+  .sub-title {
+    font-size: 0.875rem;
+    letter-spacing: 0.15em;
+  }
+}

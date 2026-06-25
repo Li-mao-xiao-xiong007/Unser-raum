@@ -1,0 +1,17 @@
+{
+  "name": "judian",
+  "version": "0.1.0",
+  "private": true,
+  "description": "据点（Unser Raum）— 双向交互的共同空间",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.50.0",
+    "next": "^15.3.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  }
+}
