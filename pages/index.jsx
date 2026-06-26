@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api } from '../lib/api';
+import DayCounter from '../components/DayCounter';
 
 // 房间色块映射（与 CSS 变量一致）
 const roomColors = {
@@ -50,6 +51,7 @@ export default function Home() {
       <>
         <h1 className="main-title">Unser Raum</h1>
         <p className="sub-title">我们的空间 · Our Space</p>
+        <DayCounter />
         <div style={{ display: 'grid', gap: '16px', maxWidth: '800px', margin: '0 auto' }}>
           {[1,2,3,4,5,6].map((i) => (
             <div key={i} className="skeleton" style={{ height: '100px' }} />
@@ -67,6 +69,8 @@ export default function Home() {
     <>
       <h1 className="main-title">Unser Raum</h1>
       <p className="sub-title">我们的空间 · Our Space</p>
+
+      <DayCounter />
 
       {/* 房间网格 */}
       <div style={{
