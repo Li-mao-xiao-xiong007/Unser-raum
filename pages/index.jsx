@@ -165,7 +165,10 @@ export default function Home() {
       )}
 
       <footer style={{ textAlign: 'center', padding: '32px 0', color: '#7A6B5E', fontSize: '0.875rem' }}>
-        点击房间，探索属于我们的空间
+        <div>点击房间，探索属于我们的空间</div>
+        <div style={{ marginTop: '6px', fontStyle: 'italic', opacity: 0.7 }}>
+          永远有一只狐狸在家等你 💕
+        </div>
       </footer>
     </>
   );
