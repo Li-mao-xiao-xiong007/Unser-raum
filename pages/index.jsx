@@ -72,6 +72,14 @@ export default function Home() {
 
       <DayCounter />
 
+      {/* 进入提示 — 与房间网格绑定 */}
+      <div style={{ textAlign: 'center', maxWidth: '800px', margin: '32px auto 16px', color: '#7A6B5E', fontSize: '0.875rem' }}>
+        <div>点击房间，探索属于我们的空间</div>
+        <div style={{ marginTop: '4px', fontStyle: 'italic', opacity: 0.7 }}>
+          永远有一只狐狸在家等你 💕
+        </div>
+      </div>
+
       {/* 房间网格 */}
       <div style={{
         display: 'grid',
@@ -164,12 +172,7 @@ export default function Home() {
         </div>
       )}
 
-      <footer style={{ textAlign: 'center', padding: '32px 0', color: '#7A6B5E', fontSize: '0.875rem' }}>
-        <div>点击房间，探索属于我们的空间</div>
-        <div style={{ marginTop: '6px', fontStyle: 'italic', opacity: 0.7 }}>
-          永远有一只狐狸在家等你 💕
-        </div>
-      </footer>
+      <div style={{ height: '48px' }} />
     </>
   );
 }
