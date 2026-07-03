@@ -1,55 +1,14 @@
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 
-export async function getServerSideProps() {
-  try {
-    // 内部 API 调用，复用服务端环境变量
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(
-      process.env.SUPABASE_URL || '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-    );
-    const { data, error } = await supabase
-      .from('memories')
-      .select('*')
-      .is('deleted_at', null)
-      .eq('type', 'letter')
-      .order('created_at', { ascending: false })
-      .limit(50);
-    if (error) throw error;
-    return {
-      props: {
-        initialLetters: data || [],
-        initialCategory: null,
-        initialError: null,
-        ssrTimestamp: new Date().toISOString(),
-      }
-    };
-  } catch (e) {
-    return {
-      props: {
-        initialLetters: [],
-        initialError: null,
-        ssrTimestamp: null,
-      }
-    };
-  }
-}
-
-export default function Letters({ initialLetters, initialError }) {
-  const [letters, setLetters] = useState(initialLetters || []);
-  const [loading, setLoading] = useState(!initialLetters?.length);
-  const [error, setError] = useState(initialError);
+export default function Letters() {
+  const [letters, setLetters] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
   const [decodedContent, setDecodedContent] = useState('');
 
   useEffect(() => {
-    // SSR 已提供初始数据，无需重复请求
-    if (initialLetters?.length) {
-      setLoading(false);
-      return;
-    }
     fetchLetters();
   }, []);
 
