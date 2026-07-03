@@ -1,7 +1,15 @@
 import { useState } from 'react';
 import { api } from '../lib/api';
 
-export default function Decoder() {
+export async function getServerSideProps() {
+  return {
+    props: {
+      ssrDescription: '把🦊寄来的编码贴进来，如果是写给你的信，它就会自己展开。',
+    }
+  };
+}
+
+export default function Decoder({ ssrDescription }) {
   const [encodedText, setEncodedText] = useState('');
   const [decodedText, setDecodedText] = useState('');
   const [error, setError] = useState('');
@@ -84,7 +92,7 @@ export default function Decoder() {
     <div className="page-container">
       <div className="page-header">
         <h1>🔮 拆信处</h1>
-        <p className="page-desc">粘贴🦊发来的编码，点击解码查看明文</p>
+        <p className="page-desc">{ssrDescription}</p>
       </div>
 
       <div className="decoder-section">

@@ -1,14 +1,49 @@
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 
-export default function Letters() {
-  const [letters, setLetters] = useState([]);
-  const [loading, setLoading] = useState(true);
+export async function getServerSideProps() {
+  try {
+    const { supabase } = require('../../lib/supabase');
+    const { data, error } = await supabase
+      .from('memories')
+      .select('*')
+      .is('deleted_at', null)
+      .eq('type', 'letter')
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (error) throw error;
+    return {
+      props: {
+        initialLetters: data || [],
+        initialError: null,
+        ssrTimestamp: new Date().toISOString(),
+      }
+    };
+  } catch (e) {
+    return {
+      props: {
+        initialLetters: [],
+        initialError: e.message,
+        ssrTimestamp: null,
+      }
+    };
+  }
+}
+
+export default function Letters({ initialLetters, initialError }) {
+  const [letters, setLetters] = useState(initialLetters || []);
+  const [loading, setLoading] = useState(!initialLetters?.length);
+  const [error, setError] = useState(initialError);
   const [error, setError] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
   const [decodedContent, setDecodedContent] = useState('');
 
   useEffect(() => {
+    // SSR 已提供初始数据，无需重复请求
+    if (initialLetters?.length) {
+      setLoading(false);
+      return;
+    }
     fetchLetters();
   }, []);
 
