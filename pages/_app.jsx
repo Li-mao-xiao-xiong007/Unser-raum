@@ -22,6 +22,7 @@ export default function App({ Component, pageProps }) {
         <NavLink href="/">🏠 空间</NavLink>
         <NavLink href="/messages">💬 留言</NavLink>
         <NavLink href="/memories">📦 记忆</NavLink>
+        <NavLink href="/decoder">🔐 拆信</NavLink>
       </nav>
       <Component {...pageProps} />
     </div>
