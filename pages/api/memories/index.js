@@ -16,6 +16,7 @@ export default async function handler(req, res) {
         tag,
         q,
         pinned,
+        type,
       } = req.query;
 
       const pageNum = Math.max(1, parseInt(page, 10));
@@ -29,6 +30,16 @@ export default async function handler(req, res) {
         .order('is_pinned', { ascending: false })
         .order('created_at', { ascending: false })
         .range(offset, offset + limitNum - 1);
+
+      // type 过滤：默认只返回记忆，不返回信件
+      if (type === 'letter') {
+        query = query.eq('type', 'letter');
+      } else if (type === 'all') {
+        // 不过滤 type，返回全部
+      } else {
+        // 默认：只返回记忆（type='memory' 或 type 为 null 的旧数据）
+        query = query.or('type.eq.memory,type.is.null');
+      }
 
       if (category) query = query.eq('category', category);
       if (tag) query = query.contains('tags', [tag]);
@@ -55,7 +66,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     try {
-      const { title, content, weight, category, tags, source, is_pinned } = req.body;
+      const { title, content, weight, category, tags, source, is_pinned, type: memType, encoded } = req.body;
 
       if (!title || !content) {
         return res.status(400).json({ error: 'title 和 content 为必填字段' });
@@ -72,6 +83,8 @@ export default async function handler(req, res) {
           tags: tags || [],
           source: source || null,
           is_pinned: is_pinned || false,
+          type: memType || 'memory',
+          encoded: encoded || false,
         })
         .select()
         .single();

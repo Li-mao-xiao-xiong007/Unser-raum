@@ -331,3 +331,348 @@ textarea.input {
     letter-spacing: 0.15em;
   }
 }
+
+/* ============================================================
+   信件系统样式
+   ============================================================ */
+
+/* 类型筛选标签 */
+.type-tabs {
+  display: flex;
+  gap: var(--space-xs);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.type-tab {
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  padding: var(--space-xs) var(--space-sm);
+  border: 1.5px solid var(--wall);
+  border-radius: var(--radius-md);
+  background: white;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.type-tab:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.type-tab.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+/* 信封网格 */
+.letters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-md);
+}
+
+/* 信封卡片 */
+.letter-envelope {
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-out);
+  overflow: hidden;
+}
+
+.letter-envelope:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.letter-envelope.expanded {
+  box-shadow: var(--shadow-lg);
+}
+
+/* 信封封面 */
+.envelope-cover {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+}
+
+.envelope-seal {
+  font-size: 1.5rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.envelope-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.envelope-title {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.envelope-meta {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.envelope-arrow {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+/* 未读信件样式 */
+.letter-envelope.unread {
+  border-left: 3px solid #E74C3C;
+}
+
+.letter-envelope.unread .envelope-seal {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* 已读信件样式 */
+.letter-envelope.read {
+  border-left: 3px solid var(--floor);
+}
+
+/* 信纸内容 */
+.letter-paper {
+  padding: 0 var(--space-md) var(--space-md);
+  border-top: 1px dashed var(--wall);
+  animation: slideDown var(--duration-normal) var(--ease-out);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+  }
+}
+
+.letter-content {
+  font-size: 0.9375rem;
+  line-height: 1.8;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  padding: var(--space-md) 0;
+}
+
+.letter-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--floor);
+}
+
+.letter-timestamp {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* 拆信处样式 */
+.decoder-section {
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.decoder-input-group {
+  margin-bottom: var(--space-md);
+}
+
+.decoder-label {
+  display: block;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.decoder-textarea {
+  width: 100%;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.875rem;
+  padding: var(--space-sm);
+  border: 1.5px solid var(--wall);
+  border-radius: var(--radius-md);
+  background: var(--background);
+  color: var(--text-primary);
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.6;
+}
+
+.decoder-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.decoder-textarea::placeholder {
+  color: #B8AFA5;
+}
+
+.decoder-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.decoder-error {
+  padding: var(--space-sm);
+  background: #FDE8E8;
+  border-radius: var(--radius-md);
+  color: #C0392B;
+  font-size: 0.875rem;
+  margin-bottom: var(--space-md);
+}
+
+.decoder-result {
+  background: var(--background);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.decoder-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.decoder-save-group {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.decoder-title-input {
+  font-family: inherit;
+  font-size: 0.875rem;
+  padding: 6px 12px;
+  border: 1.5px solid var(--wall);
+  border-radius: var(--radius-md);
+  background: white;
+  color: var(--text-primary);
+  min-width: 200px;
+}
+
+.decoder-title-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.decoder-content {
+  font-size: 0.9375rem;
+  line-height: 1.8;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  background: white;
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--wall);
+}
+
+.decoder-success {
+  padding: var(--space-sm);
+  background: #E8F5E9;
+  border-radius: var(--radius-md);
+  color: #2E7D32;
+  font-size: 0.875rem;
+  margin-bottom: var(--space-md);
+}
+
+.decoder-success a {
+  color: #2E7D32;
+  font-weight: 500;
+}
+
+.decoder-help {
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-md);
+}
+
+.decoder-help h3 {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.decoder-help ul {
+  list-style: none;
+  padding: 0;
+}
+
+.decoder-help li {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  padding: var(--space-xs) 0;
+  padding-left: var(--space-md);
+  position: relative;
+}
+
+.decoder-help li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+}
+
+.decoder-help a {
+  color: var(--accent);
+}
+
+/* 信件页面响应式 */
+@media (max-width: 768px) {
+  .letters-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .decoder-result-header {
+    flex-direction: column;
+  }
+
+  .decoder-save-group {
+    width: 100%;
+  }
+
+  .decoder-title-input {
+    flex: 1;
+    min-width: 0;
+  }
+}

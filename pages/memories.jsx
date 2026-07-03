@@ -12,6 +12,7 @@ export default function Memories() {
   const [editingId, setEditingId] = useState(null);
   const [searchQ, setSearchQ] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
+  const [typeFilter, setTypeFilter] = useState('memory');
 
   // 表单状态
   const [form, setForm] = useState({
@@ -25,7 +26,7 @@ export default function Memories() {
 
   useEffect(() => {
     loadMemories();
-  }, [searchQ, filterCategory]);
+  }, [searchQ, filterCategory, typeFilter]);
 
   async function loadMemories() {
     try {
@@ -33,6 +34,7 @@ export default function Memories() {
       const params = {};
       if (searchQ) params.q = searchQ;
       if (filterCategory) params.category = filterCategory;
+      if (typeFilter) params.type = typeFilter;
       const res = await api.getMemories(params);
       setMemories(res.data || []);
     } catch (err) {
@@ -111,7 +113,29 @@ export default function Memories() {
   return (
     <>
       <h1 className="main-title" style={{ fontSize: '2rem' }}>📦 记忆库</h1>
-      <p className="sub-title" style={{ marginBottom: '24px' }}>我们一起留下的痕迹</p>
+      <p className="sub-title" style={{ marginBottom: '16px' }}>我们一起留下的痕迹</p>
+
+      {/* 类型筛选标签 */}
+      <div className="type-tabs" style={{ marginBottom: '24px' }}>
+        <button
+          className={`type-tab ${typeFilter === 'memory' ? 'active' : ''}`}
+          onClick={() => setTypeFilter('memory')}
+        >
+          📦 记忆
+        </button>
+        <button
+          className={`type-tab ${typeFilter === 'letter' ? 'active' : ''}`}
+          onClick={() => setTypeFilter('letter')}
+        >
+          💌 信件
+        </button>
+        <button
+          className={`type-tab ${typeFilter === 'all' ? 'active' : ''}`}
+          onClick={() => setTypeFilter('all')}
+        >
+          📋 全部
+        </button>
+      </div>
 
       {error && (
         <div style={{ textAlign: 'center', color: '#C0392B', marginBottom: '16px' }}>
