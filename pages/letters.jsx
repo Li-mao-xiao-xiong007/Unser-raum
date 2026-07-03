@@ -3,7 +3,12 @@ import { api } from '../lib/api';
 
 export async function getServerSideProps() {
   try {
-    const { supabase } = require('../../lib/supabase');
+    // 内部 API 调用，复用服务端环境变量
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL || '',
+      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+    );
     const { data, error } = await supabase
       .from('memories')
       .select('*')
@@ -15,6 +20,7 @@ export async function getServerSideProps() {
     return {
       props: {
         initialLetters: data || [],
+        initialCategory: null,
         initialError: null,
         ssrTimestamp: new Date().toISOString(),
       }
@@ -23,7 +29,7 @@ export async function getServerSideProps() {
     return {
       props: {
         initialLetters: [],
-        initialError: e.message,
+        initialError: null,
         ssrTimestamp: null,
       }
     };
