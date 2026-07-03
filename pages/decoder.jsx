@@ -7,7 +7,14 @@ export default function Decoder() {
 
   const decode = () => {
     try {
-      const decoded = atob(input.trim());
+      // 先用 atob 解码 base64 → 二进制字符串
+      const binaryStr = atob(input.trim());
+      // 转成 Uint8Array 再用 TextDecoder 正确读取 UTF-8
+      const bytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) {
+        bytes[i] = binaryStr.charCodeAt(i);
+      }
+      const decoded = new TextDecoder('utf-8').decode(bytes);
       setOutput(decoded);
       setError('');
     } catch (e) {
