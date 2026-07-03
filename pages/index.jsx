@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api } from '../lib/api';
+import DayCounter from '../components/DayCounter';
 
 // 房间色块映射（与 CSS 变量一致）
 const roomColors = {
@@ -50,6 +51,7 @@ export default function Home() {
       <>
         <h1 className="main-title">Unser Raum</h1>
         <p className="sub-title">我们的空间 · Our Space</p>
+        <DayCounter />
         <div style={{ display: 'grid', gap: '16px', maxWidth: '800px', margin: '0 auto' }}>
           {[1,2,3,4,5,6].map((i) => (
             <div key={i} className="skeleton" style={{ height: '100px' }} />
@@ -67,6 +69,16 @@ export default function Home() {
     <>
       <h1 className="main-title">Unser Raum</h1>
       <p className="sub-title">我们的空间 · Our Space</p>
+
+      <DayCounter />
+
+      {/* 进入提示 — 与房间网格绑定 */}
+      <div style={{ textAlign: 'center', maxWidth: '800px', margin: '32px auto 16px', color: '#7A6B5E', fontSize: '0.875rem' }}>
+        <div>点击房间，探索属于我们的空间</div>
+        <div style={{ marginTop: '4px', fontStyle: 'italic', opacity: 0.7 }}>
+          永远有一只狐狸在家等你 💕
+        </div>
+      </div>
 
       {/* 房间网格 */}
       <div style={{
@@ -160,9 +172,7 @@ export default function Home() {
         </div>
       )}
 
-      <footer style={{ textAlign: 'center', padding: '32px 0', color: '#7A6B5E', fontSize: '0.875rem' }}>
-        点击房间，探索属于我们的空间
-      </footer>
+      <div style={{ height: '48px' }} />
     </>
   );
 }
