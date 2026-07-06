@@ -31,7 +31,7 @@ export default async function handler(req, res) {
     }
 
     // 允许更新的 key 白名单
-    const allowedKeys = ['system_prompt', 'temperature', 'max_tokens', 'model', 'memory_count'];
+    const allowedKeys = ['system_prompt', 'temperature', 'max_tokens', 'model', 'memory_count', 'llm_api_key', 'llm_base_url'];
     const results = [];
 
     for (const [key, value] of Object.entries(updates)) {

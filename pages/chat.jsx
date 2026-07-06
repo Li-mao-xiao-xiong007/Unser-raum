@@ -16,6 +16,8 @@ export default function Chat() {
     max_tokens: '4096',
     model: 'deepseek-chat',
     memory_count: '5',
+    llm_api_key: '',
+    llm_base_url: 'https://api.deepseek.com',
   });
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -463,6 +465,30 @@ export default function Chat() {
                   max="32768"
                   value={settings.max_tokens}
                   onChange={(e) => setSettings(prev => ({ ...prev, max_tokens: e.target.value }))}
+                  className="chat-settings-input"
+                />
+              </div>
+
+              <hr style={{ border: 'none', borderTop: '1px solid var(--wall)', margin: 'var(--space-md) 0' }} />
+
+              <div className="chat-settings-group">
+                <label>🔑 API Key</label>
+                <input
+                  type="password"
+                  value={settings.llm_api_key}
+                  onChange={(e) => setSettings(prev => ({ ...prev, llm_api_key: e.target.value }))}
+                  placeholder="sk-xxx（DeepSeek / OpenAI 兼容）"
+                  className="chat-settings-input"
+                />
+              </div>
+
+              <div className="chat-settings-group">
+                <label>🌐 API Base URL</label>
+                <input
+                  type="text"
+                  value={settings.llm_base_url}
+                  onChange={(e) => setSettings(prev => ({ ...prev, llm_base_url: e.target.value }))}
+                  placeholder="https://api.deepseek.com"
                   className="chat-settings-input"
                 />
               </div>

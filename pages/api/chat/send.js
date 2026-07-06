@@ -72,12 +72,20 @@ export default async function handler(req, res) {
     ...(history || []).map(m => ({ role: m.role, content: m.content })),
   ];
 
-  // 6. 调用 DeepSeek API（流式）
-  const apiKey = process.env.LLM_API_KEY;
-  const baseUrl = process.env.LLM_BASE_URL || 'https://api.deepseek.com';
+  // 6. 调用 LLM API（流式）— 优先从 chat_settings 读，fallback 到环境变量
+  const apiKey = settings.llm_api_key || process.env.LLM_API_KEY;
+  const baseUrl = settings.llm_base_url || process.env.LLM_BASE_URL || 'https://api.deepseek.com';
 
   if (!apiKey) {
-    return res.status(500).json({ error: '未配置 LLM_API_KEY' });
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      'Connection': 'keep-alive',
+    });
+    res.write(`data: ${JSON.stringify({ error: '未配置 API Key，请在设置中填写' })}\n\n`);
+    res.write('data: [DONE]\n\n');
+    res.end();
+    return;
   }
 
   // 设置 SSE 头

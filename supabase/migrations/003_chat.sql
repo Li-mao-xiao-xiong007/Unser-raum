@@ -43,7 +43,9 @@ INSERT INTO chat_settings (key, value) VALUES
   ('temperature', '1.0'),
   ('max_tokens', '4096'),
   ('model', 'deepseek-chat'),
-  ('memory_count', '5')
+  ('memory_count', '5'),
+  ('llm_api_key', ''),
+  ('llm_base_url', 'https://api.deepseek.com')
 ON CONFLICT (key) DO NOTHING;
 
 -- ============================================================
