@@ -96,6 +96,13 @@ a:hover {
   flex-direction: column;
 }
 
+/* Chat 页面需要全屏，突破 container 限制 */
+.container:has(.chat-layout) {
+  max-width: none;
+  padding: 0;
+  min-height: auto;
+}
+
 /* 导航 */
 .nav {
   display: flex;
