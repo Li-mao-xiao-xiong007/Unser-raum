@@ -24,6 +24,7 @@ export default function Chat() {
 
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+  const isSendingRef = useRef(false); // 防止发送期间 loadMessages 覆盖临时消息
 
   // 滚动到底部
   const scrollToBottom = useCallback(() => {
@@ -43,7 +44,7 @@ export default function Chat() {
 
   // 加载会话消息
   const loadMessages = useCallback(async (convId) => {
-    if (!convId) return;
+    if (!convId || isSendingRef.current) return;
     try {
       setLoading(true);
       const res = await fetch(`/api/chat/${convId}`);
@@ -184,6 +185,7 @@ export default function Chat() {
 
     setMessages(prev => [...prev, tempUserMsg, tempAssistantMsg]);
     setStreaming(true);
+    isSendingRef.current = true;
 
     try {
       const res = await fetch('/api/chat/send', {
@@ -251,6 +253,7 @@ export default function Chat() {
       // 移除临时的空 assistant 消息
       setMessages(prev => prev.filter(m => m.id !== tempAssistantMsg.id));
     } finally {
+      isSendingRef.current = false;
       setStreaming(false);
     }
   };
@@ -328,6 +331,11 @@ export default function Chat() {
             </button>
           </div>
         </aside>
+
+        {/* 移动端侧边栏遮罩 */}
+        {sidebarOpen && (
+          <div className="chat-sidebar-overlay" onClick={() => setSidebarOpen(false)} />
+        )}
 
         {/* 主区域 */}
         <main className="chat-main">
