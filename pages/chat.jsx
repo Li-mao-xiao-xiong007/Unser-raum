@@ -36,13 +36,28 @@ export default function Chat() {
   const [lastFailedAction, setLastFailedAction] = useState(null);
 
   const messagesEndRef = useRef(null);
+  const messagesPanelRef = useRef(null);
   const textareaRef = useRef(null);
   const isSendingRef = useRef(false);
   const abortControllerRef = useRef(null);
 
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = useCallback((behavior = 'smooth') => {
+    requestAnimationFrame(() => {
+      if (messagesPanelRef.current) {
+        messagesPanelRef.current.scrollTo({
+          top: messagesPanelRef.current.scrollHeight,
+          behavior,
+        });
+      }
+      messagesEndRef.current?.scrollIntoView({ behavior, block: 'end' });
+    });
   }, []);
+
+  const scrollToBottomAfterKeyboard = useCallback(() => {
+    scrollToBottom('auto');
+    window.setTimeout(() => scrollToBottom('smooth'), 80);
+    window.setTimeout(() => scrollToBottom('smooth'), 280);
+  }, [scrollToBottom]);
 
   const loadConversations = useCallback(async () => {
     try {
@@ -109,6 +124,20 @@ export default function Chat() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+
+    const handleViewportChange = () => scrollToBottomAfterKeyboard();
+    viewport.addEventListener('resize', handleViewportChange);
+    viewport.addEventListener('scroll', handleViewportChange);
+
+    return () => {
+      viewport.removeEventListener('resize', handleViewportChange);
+      viewport.removeEventListener('scroll', handleViewportChange);
+    };
+  }, [scrollToBottomAfterKeyboard]);
 
   const createConversation = async () => {
     try {
@@ -222,9 +251,11 @@ export default function Chat() {
 
           try {
             const parsed = JSON.parse(data);
-            if (parsed.user_message && tempUserId) {
+            if (parsed.user_message) {
               setMessages(prev => prev.map(msg => (
-                msg.id === tempUserId ? parsed.user_message : msg
+                msg.id === tempUserId || msg.id === parsed.user_message.id
+                  ? parsed.user_message
+                  : msg
               )));
               fromMessageId = parsed.user_message.id;
             }
@@ -557,7 +588,7 @@ export default function Chat() {
             </button>
           </div>
 
-          <div className="chat-messages">
+          <div className="chat-messages" ref={messagesPanelRef}>
             {!currentConvId && messages.length === 0 ? (
               <div className="chat-welcome">
                 <div className="chat-welcome-icon">🦊</div>
@@ -588,7 +619,12 @@ export default function Chat() {
               ref={textareaRef}
               className="chat-input"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value);
+                scrollToBottomAfterKeyboard();
+              }}
+              onFocus={scrollToBottomAfterKeyboard}
+              onClick={scrollToBottomAfterKeyboard}
               onKeyDown={handleKeyDown}
               placeholder={streaming ? '🦊 正在回复...' : '说点什么...'}
               disabled={streaming}
