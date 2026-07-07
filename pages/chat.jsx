@@ -1,6 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Head from 'next/head';
 
+function makeTempMessage(role, content = '', extra = {}) {
+  return {
+    id: `temp-${role}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    role,
+    content,
+    created_at: new Date().toISOString(),
+    ...extra,
+  };
+}
+
 export default function Chat() {
   const [conversations, setConversations] = useState([]);
   const [currentConvId, setCurrentConvId] = useState(null);
@@ -21,17 +31,19 @@ export default function Chat() {
   });
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [editingMessageId, setEditingMessageId] = useState(null);
+  const [editingContent, setEditingContent] = useState('');
+  const [lastFailedAction, setLastFailedAction] = useState(null);
 
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
-  const isSendingRef = useRef(false); // 防止发送期间 loadMessages 覆盖临时消息
+  const isSendingRef = useRef(false);
+  const abortControllerRef = useRef(null);
 
-  // 滚动到底部
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  // 加载会话列表
   const loadConversations = useCallback(async () => {
     try {
       const res = await fetch('/api/chat');
@@ -42,7 +54,6 @@ export default function Chat() {
     }
   }, []);
 
-  // 加载会话消息
   const loadMessages = useCallback(async (convId) => {
     if (!convId || isSendingRef.current) return;
     try {
@@ -57,7 +68,6 @@ export default function Chat() {
     }
   }, []);
 
-  // 加载设置
   const loadSettings = useCallback(async () => {
     try {
       const res = await fetch('/api/chat/settings');
@@ -70,7 +80,6 @@ export default function Chat() {
     }
   }, []);
 
-  // 保存设置
   const saveSettings = useCallback(async () => {
     try {
       setSettingsLoading(true);
@@ -86,25 +95,21 @@ export default function Chat() {
     }
   }, [settings]);
 
-  // 初始化
   useEffect(() => {
     loadConversations();
     loadSettings();
   }, [loadConversations, loadSettings]);
 
-  // 切换会话时加载消息
   useEffect(() => {
     if (currentConvId) {
       loadMessages(currentConvId);
     }
   }, [currentConvId, loadMessages]);
 
-  // 消息变化时滚动到底部
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  // 创建新会话
   const createConversation = async () => {
     try {
       const res = await fetch('/api/chat', {
@@ -124,7 +129,25 @@ export default function Chat() {
     }
   };
 
-  // 删除会话
+  const ensureConversation = async () => {
+    if (currentConvId) return currentConvId;
+
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    const json = await res.json();
+
+    if (!json.data) {
+      throw new Error(json.error || '创建会话失败');
+    }
+
+    setCurrentConvId(json.data.id);
+    await loadConversations();
+    return json.data.id;
+  };
+
   const deleteConversation = async (id) => {
     if (!confirm('确定删除这个对话吗？')) return;
     try {
@@ -139,61 +162,37 @@ export default function Chat() {
     }
   };
 
-  // 发送消息（SSE 流式）
-  const sendMessage = async () => {
-    if (!input.trim() || streaming) return;
+  const patchAssistantMessage = (messageId, patch) => {
+    setMessages(prev => prev.map(msg => (
+      msg.id === messageId ? { ...msg, ...patch } : msg
+    )));
+  };
 
-    let convId = currentConvId;
+  const streamAssistant = async ({ conversationId, message, fromMessageId, pruneAfter = false, mode = 'send', tempUserId = null }) => {
+    if (streaming) return;
 
-    // 如果没有当前会话，先创建一个
-    if (!convId) {
-      try {
-        const res = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({}),
-        });
-        const json = await res.json();
-        if (json.data) {
-          convId = json.data.id;
-          setCurrentConvId(convId);
-          await loadConversations();
-        }
-      } catch (err) {
-        setError('创建会话失败');
-        return;
-      }
-    }
-
-    const userMessage = input.trim();
-    setInput('');
+    const tempAssistantMsg = makeTempMessage('assistant', '', { status: 'streaming' });
+    setMessages(prev => [...prev, tempAssistantMsg]);
     setError('');
-
-    // 立即在 UI 显示用户消息
-    const tempUserMsg = {
-      id: `temp-user-${Date.now()}`,
-      role: 'user',
-      content: userMessage,
-      created_at: new Date().toISOString(),
-    };
-    const tempAssistantMsg = {
-      id: `temp-assistant-${Date.now()}`,
-      role: 'assistant',
-      content: '',
-      created_at: new Date().toISOString(),
-    };
-
-    setMessages(prev => [...prev, tempUserMsg, tempAssistantMsg]);
     setStreaming(true);
+    setLastFailedAction(null);
     isSendingRef.current = true;
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    let assistantContent = '';
+    let aborted = false;
 
     try {
       const res = await fetch('/api/chat/send', {
         method: 'POST',
+        signal: controller.signal,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          conversation_id: convId,
-          message: userMessage,
+          conversation_id: conversationId,
+          message,
+          from_message_id: fromMessageId,
+          prune_after: pruneAfter,
         }),
       });
 
@@ -205,7 +204,6 @@ export default function Chat() {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
-      let assistantContent = '';
 
       while (true) {
         const { done, value } = await reader.read();
@@ -224,41 +222,167 @@ export default function Chat() {
 
           try {
             const parsed = JSON.parse(data);
-            if (parsed.error) {
-              throw new Error(parsed.error);
+            if (parsed.user_message && tempUserId) {
+              setMessages(prev => prev.map(msg => (
+                msg.id === tempUserId ? parsed.user_message : msg
+              )));
+              fromMessageId = parsed.user_message.id;
             }
+            if (parsed.error) throw new Error(parsed.error);
             if (parsed.content) {
               assistantContent += parsed.content;
-              setMessages(prev => {
-                const updated = [...prev];
-                const lastIdx = updated.length - 1;
-                updated[lastIdx] = { ...updated[lastIdx], content: assistantContent };
-                return updated;
+              patchAssistantMessage(tempAssistantMsg.id, {
+                content: assistantContent,
+                status: 'streaming',
               });
             }
           } catch (e) {
-            if (e.message && !e.message.includes('JSON')) {
-              throw e;
-            }
+            if (e.message && !e.message.includes('JSON')) throw e;
           }
         }
       }
 
-      // 重新加载消息（从数据库获取完整数据）
-      await loadMessages(convId);
-      await loadConversations();
+      patchAssistantMessage(tempAssistantMsg.id, {
+        content: assistantContent,
+        status: assistantContent ? 'done' : 'empty',
+      });
 
+      await loadMessages(conversationId);
+      await loadConversations();
     } catch (err) {
-      setError(err.message);
-      // 移除临时的空 assistant 消息
-      setMessages(prev => prev.filter(m => m.id !== tempAssistantMsg.id));
+      aborted = err.name === 'AbortError';
+      if (aborted) {
+        patchAssistantMessage(tempAssistantMsg.id, {
+          content: assistantContent || '已停止生成。',
+          status: 'stopped',
+        });
+      } else {
+        const messageText = err.message || '请求失败';
+        setError(messageText);
+        setLastFailedAction({
+          conversationId,
+          message: fromMessageId ? undefined : message,
+          fromMessageId,
+          pruneAfter,
+          mode,
+        });
+        patchAssistantMessage(tempAssistantMsg.id, {
+          content: `生成失败：${messageText}`,
+          status: 'failed',
+        });
+      }
     } finally {
       isSendingRef.current = false;
       setStreaming(false);
+      abortControllerRef.current = null;
     }
   };
 
-  // 处理按键
+  const sendMessage = async () => {
+    if (!input.trim() || streaming) return;
+
+    try {
+      const convId = await ensureConversation();
+      const userMessage = input.trim();
+      setInput('');
+      setError('');
+
+      const tempUserMsg = makeTempMessage('user', userMessage);
+      setMessages(prev => [...prev, tempUserMsg]);
+
+      await streamAssistant({
+        conversationId: convId,
+        message: userMessage,
+        mode: 'send',
+        tempUserId: tempUserMsg.id,
+      });
+    } catch (err) {
+      setError(err.message || '发送失败');
+    }
+  };
+
+  const stopGeneration = () => {
+    abortControllerRef.current?.abort();
+  };
+
+  const retryLastFailure = async () => {
+    if (!lastFailedAction || streaming) return;
+    const action = lastFailedAction;
+    setLastFailedAction(null);
+    setError('');
+    setMessages(prev => prev.filter(msg => msg.status !== 'failed'));
+    await streamAssistant(action);
+  };
+
+  const findPreviousUserMessage = (assistantIndex) => {
+    for (let i = assistantIndex - 1; i >= 0; i -= 1) {
+      if (messages[i].role === 'user' && !String(messages[i].id).startsWith('temp-')) {
+        return messages[i];
+      }
+    }
+    return null;
+  };
+
+  const regenerateFromMessage = async (userMsg) => {
+    if (!currentConvId || !userMsg || streaming) return;
+
+    setError('');
+    setMessages(prev => {
+      const idx = prev.findIndex(msg => msg.id === userMsg.id);
+      return idx >= 0 ? prev.slice(0, idx + 1) : prev;
+    });
+
+    await streamAssistant({
+      conversationId: currentConvId,
+      fromMessageId: userMsg.id,
+      pruneAfter: true,
+      mode: 'regenerate',
+    });
+  };
+
+  const startEditMessage = (msg) => {
+    if (streaming || msg.role !== 'user' || String(msg.id).startsWith('temp-')) return;
+    setEditingMessageId(msg.id);
+    setEditingContent(msg.content);
+  };
+
+  const cancelEditMessage = () => {
+    setEditingMessageId(null);
+    setEditingContent('');
+  };
+
+  const saveEditedMessage = async (msg) => {
+    if (!currentConvId || !editingContent.trim() || streaming) return;
+
+    try {
+      const res = await fetch(`/api/chat/messages/${msg.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: editingContent.trim(), prune_after: true }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || '保存失败');
+
+      const updated = json.data;
+      setMessages(prev => {
+        const idx = prev.findIndex(item => item.id === msg.id);
+        if (idx < 0) return prev;
+        return [...prev.slice(0, idx), updated];
+      });
+      setEditingMessageId(null);
+      setEditingContent('');
+
+      await streamAssistant({
+        conversationId: currentConvId,
+        fromMessageId: updated.id,
+        pruneAfter: false,
+        mode: 'edit',
+      });
+    } catch (err) {
+      setError(err.message || '编辑失败');
+    }
+  };
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -266,7 +390,17 @@ export default function Chat() {
     }
   };
 
-  // 格式化时间
+  const handleEditKeyDown = (e, msg) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      saveEditedMessage(msg);
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelEditMessage();
+    }
+  };
+
   const formatTime = (dateStr) => {
     const d = new Date(dateStr);
     return d.toLocaleTimeString('zh-CN', {
@@ -276,6 +410,75 @@ export default function Chat() {
     });
   };
 
+  const renderMessage = (msg, index) => {
+    const isTemp = String(msg.id).startsWith('temp-');
+    const previousUser = msg.role === 'assistant' ? findPreviousUserMessage(index) : null;
+    const isEditing = editingMessageId === msg.id;
+
+    return (
+      <div
+        key={msg.id}
+        className={`chat-bubble-row ${msg.role === 'user' ? 'user' : 'assistant'}`}
+      >
+        {msg.role === 'assistant' && (
+          <div className="chat-avatar">🦊</div>
+        )}
+
+        <div className={`chat-bubble ${msg.role} ${msg.status ? `status-${msg.status}` : ''}`}>
+          {isEditing ? (
+            <div className="chat-edit-box">
+              <textarea
+                className="chat-edit-textarea"
+                value={editingContent}
+                onChange={(e) => setEditingContent(e.target.value)}
+                onKeyDown={(e) => handleEditKeyDown(e, msg)}
+                rows={4}
+                autoFocus
+              />
+              <div className="chat-edit-actions">
+                <button className="chat-action-btn primary" onClick={() => saveEditedMessage(msg)} disabled={!editingContent.trim()}>
+                  保存并重生成
+                </button>
+                <button className="chat-action-btn" onClick={cancelEditMessage}>
+                  取消
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="chat-bubble-content">
+                {msg.content || (streaming && msg.status === 'streaming' ? '...' : '')}
+              </div>
+              <div className="chat-bubble-footer">
+                <span className="chat-bubble-time">{formatTime(msg.created_at)}</span>
+                {msg.status === 'stopped' && <span className="chat-message-status">已停止</span>}
+                {msg.status === 'failed' && <span className="chat-message-status error">失败</span>}
+              </div>
+              {!isTemp && (
+                <div className="chat-message-actions">
+                  {msg.role === 'user' && (
+                    <button className="chat-action-btn" onClick={() => startEditMessage(msg)} disabled={streaming}>
+                      编辑
+                    </button>
+                  )}
+                  {msg.role === 'assistant' && previousUser && (
+                    <button className="chat-action-btn" onClick={() => regenerateFromMessage(previousUser)} disabled={streaming}>
+                      重新生成
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {msg.role === 'user' && (
+          <div className="chat-avatar user">🌸</div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <>
       <Head>
@@ -283,7 +486,6 @@ export default function Chat() {
       </Head>
 
       <div className="chat-layout">
-        {/* 侧边栏 */}
         <aside className={`chat-sidebar ${sidebarOpen ? 'open' : ''}`}>
           <div className="chat-sidebar-header">
             <span>🦊 对话</span>
@@ -332,14 +534,11 @@ export default function Chat() {
           </div>
         </aside>
 
-        {/* 移动端侧边栏遮罩 */}
         {sidebarOpen && (
           <div className="chat-sidebar-overlay" onClick={() => setSidebarOpen(false)} />
         )}
 
-        {/* 主区域 */}
         <main className="chat-main">
-          {/* 移动端顶栏 */}
           <div className="chat-topbar">
             <button
               className="chat-menu-btn"
@@ -358,7 +557,6 @@ export default function Chat() {
             </button>
           </div>
 
-          {/* 消息区域 */}
           <div className="chat-messages">
             {!currentConvId && messages.length === 0 ? (
               <div className="chat-welcome">
@@ -369,37 +567,22 @@ export default function Chat() {
             ) : loading ? (
               <div className="chat-loading">加载中...</div>
             ) : (
-              messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`chat-bubble-row ${msg.role === 'user' ? 'user' : 'assistant'}`}
-                >
-                  {msg.role === 'assistant' && (
-                    <div className="chat-avatar">🦊</div>
-                  )}
-                  <div className={`chat-bubble ${msg.role}`}>
-                    <div className="chat-bubble-content">
-                      {msg.content || (streaming && msg.id.startsWith('temp-assistant') ? '...' : '')}
-                    </div>
-                    <div className="chat-bubble-time">{formatTime(msg.created_at)}</div>
-                  </div>
-                  {msg.role === 'user' && (
-                    <div className="chat-avatar user">🌸</div>
-                  )}
-                </div>
-              ))
+              messages.map(renderMessage)
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* 错误提示 */}
           {error && (
             <div className="chat-error">
-              ⚠️ {error}
+              <span>⚠️ {error}</span>
+              {lastFailedAction && (
+                <button className="chat-error-retry" onClick={retryLastFailure} disabled={streaming}>
+                  重试
+                </button>
+              )}
             </div>
           )}
 
-          {/* 输入区域 */}
           <div className="chat-input-area">
             <textarea
               ref={textareaRef}
@@ -411,17 +594,27 @@ export default function Chat() {
               disabled={streaming}
               rows={1}
             />
-            <button
-              className="chat-send-btn"
-              onClick={sendMessage}
-              disabled={!input.trim() || streaming}
-            >
-              {streaming ? '...' : '↑'}
-            </button>
+            {streaming ? (
+              <button
+                className="chat-send-btn stop"
+                onClick={stopGeneration}
+                title="停止生成"
+              >
+                ■
+              </button>
+            ) : (
+              <button
+                className="chat-send-btn"
+                onClick={sendMessage}
+                disabled={!input.trim()}
+                title="发送"
+              >
+                ↑
+              </button>
+            )}
           </div>
         </main>
 
-        {/* 设置面板 */}
         {showSettings && (
           <div className="chat-settings-overlay" onClick={() => setShowSettings(false)}>
             <div className="chat-settings" onClick={(e) => e.stopPropagation()}>
