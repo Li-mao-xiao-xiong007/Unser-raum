@@ -970,6 +970,11 @@ textarea.input {
   transition: opacity var(--duration-fast) var(--ease-out);
 }
 
+.chat-bubble.assistant .chat-message-actions {
+  justify-content: flex-start;
+  opacity: 1;
+}
+
 .chat-bubble:hover .chat-message-actions,
 .chat-bubble:focus-within .chat-message-actions {
   opacity: 1;
@@ -991,6 +996,18 @@ textarea.input {
   border-color: var(--accent);
   color: var(--accent);
   background: #FFF7F1;
+}
+
+.chat-action-btn.regenerate {
+  background: #FFF7F1;
+  border-color: #E7C8B8;
+  color: var(--accent);
+}
+
+.chat-action-btn.regenerate:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
 }
 
 .chat-action-btn:disabled {
@@ -1271,6 +1288,15 @@ textarea.input {
 
   .chat-bubble-row {
     max-width: 90%;
+  }
+
+  .chat-message-actions {
+    opacity: 1;
+  }
+
+  .chat-action-btn {
+    padding: 4px 10px;
+    font-size: 0.75rem;
   }
 
   .chat-input-area {

@@ -358,6 +358,8 @@ export default function Chat() {
     if (!currentConvId || !userMsg || streaming) return;
 
     setError('');
+    setEditingMessageId(null);
+    setEditingContent('');
     setMessages(prev => {
       const idx = prev.findIndex(msg => msg.id === userMsg.id);
       return idx >= 0 ? prev.slice(0, idx + 1) : prev;
@@ -493,8 +495,13 @@ export default function Chat() {
                     </button>
                   )}
                   {msg.role === 'assistant' && previousUser && (
-                    <button className="chat-action-btn" onClick={() => regenerateFromMessage(previousUser)} disabled={streaming}>
-                      重新生成
+                    <button
+                      className="chat-action-btn regenerate"
+                      onClick={() => regenerateFromMessage(previousUser)}
+                      disabled={streaming}
+                      title="基于上一条用户消息重新生成这条回复"
+                    >
+                      ↻ 重新生成
                     </button>
                   )}
                 </div>
