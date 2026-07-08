@@ -34,6 +34,7 @@ export default function Chat() {
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editingContent, setEditingContent] = useState('');
   const [lastFailedAction, setLastFailedAction] = useState(null);
+  const [viewportHeight, setViewportHeight] = useState(undefined);
 
   const messagesEndRef = useRef(null);
   const messagesPanelRef = useRef(null);
@@ -129,7 +130,22 @@ export default function Chat() {
     const viewport = window.visualViewport;
     if (!viewport) return;
 
-    const handleViewportChange = () => scrollToBottomAfterKeyboard();
+    const handleViewportChange = () => {
+      setViewportHeight(viewport.height);
+      scrollToBottomAfterKeyboard();
+      // 确保输入框可见
+      if (textareaRef.current && viewport.height < window.innerHeight) {
+        textareaRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // 给浏览器一点时间完成键盘弹出后的重排，再滚一次
+        setTimeout(() => {
+          textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 200);
+      }
+    };
+
+    // 初始化
+    setViewportHeight(viewport.height);
+
     viewport.addEventListener('resize', handleViewportChange);
     viewport.addEventListener('scroll', handleViewportChange);
 
@@ -523,7 +539,7 @@ export default function Chat() {
         <title>💬 Chat - Unser Raum</title>
       </Head>
 
-      <div className="chat-layout">
+      <div className="chat-layout" style={viewportHeight ? { height: `${viewportHeight - 60}px` } : undefined}>
         <aside className={`chat-sidebar ${sidebarOpen ? 'open' : ''}`}>
           <div className="chat-sidebar-header">
             <span>🦊 对话</span>
