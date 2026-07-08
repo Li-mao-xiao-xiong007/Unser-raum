@@ -644,7 +644,10 @@ export default function Chat() {
               value={input}
               onChange={(e) => {
                 setInput(e.target.value);
-                scrollToBottomAfterKeyboard();
+                // 键盘弹出时只保持输入框可见，不滚消息面板
+                if (window.visualViewport && window.visualViewport.height < window.innerHeight) {
+                  textareaRef.current?.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+                }
               }}
               onFocus={scrollToBottomAfterKeyboard}
               onClick={scrollToBottomAfterKeyboard}
