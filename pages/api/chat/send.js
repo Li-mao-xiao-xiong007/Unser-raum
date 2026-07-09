@@ -15,20 +15,78 @@ function buildSettings(rows) {
   return settings;
 }
 
-async function loadMemoryContext(memoryCount) {
+function extractKeywords(text) {
+  if (!text) return [];
+  const cleaned = text
+    .replace(/[，。！？、；：""''（）【】《》\s,.!?;:"'()\[\]<>\-—…]/g, ' ')
+    .trim()
+    .toLowerCase();
+  const words = cleaned.split(/\s+/).filter(w => w.length >= 2);
+
+  if (text.length <= 100) {
+    const raw = text.toLowerCase();
+    for (let n = 2; n <= 4; n++) {
+      for (let i = 0; i <= raw.length - n; i++) {
+        words.push(raw.slice(i, i + n));
+      }
+    }
+  }
+
+  return [...new Set(words)];
+}
+
+function matchScore(memory, keywords) {
+  let score = 0;
+  const tags = (memory.tags || []).map(t => t.toLowerCase());
+  const category = (memory.category || '').toLowerCase();
+
+  for (const kw of keywords) {
+    if (kw.length < 2) continue;
+    if (category && (kw === category || category.includes(kw) || kw.includes(category))) {
+      score += 3;
+    }
+    for (const tag of tags) {
+      if (kw === tag || tag.includes(kw) || kw.includes(tag)) {
+        score += 2;
+      }
+    }
+  }
+
+  return score;
+}
+
+async function loadMemoryContext(memoryCount, userMessage) {
   if (memoryCount <= 0) return '';
 
-  const { data: memories } = await supabase
+  const { data: allMemories } = await supabase
     .from('memories')
-    .select('title, content, category')
+    .select('title, content, category, tags, weight, is_pinned, created_at')
     .eq('type', 'memory')
-    .order('created_at', { ascending: false })
-    .limit(memoryCount);
+    .is('deleted_at', null)
+    .order('is_pinned', { ascending: false })
+    .order('weight', { ascending: false })
+    .order('created_at', { ascending: false });
 
-  if (!memories || memories.length === 0) return '';
+  if (!allMemories || allMemories.length === 0) return '';
+
+  const keywords = extractKeywords(userMessage);
+
+  const scored = allMemories.map(m => ({
+    ...m,
+    _score: keywords.length > 0 ? matchScore(m, keywords) : 0,
+  }));
+
+  scored.sort((a, b) => {
+    if (b._score !== a._score) return b._score - a._score;
+    if (b.is_pinned !== a.is_pinned) return b.is_pinned ? 1 : -1;
+    if (b.weight !== a.weight) return b.weight - a.weight;
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
+
+  const selected = scored.slice(0, memoryCount);
 
   return '\n\n## 关键记忆\n' +
-    memories.map((m, i) => `${i + 1}. [${m.category || '未分类'}] ${m.title}: ${m.content}`).join('\n');
+    selected.map((m, i) => `${i + 1}. [${m.category || '未分类'}] ${m.title}: ${m.content}`).join('\n');
 }
 
 export default async function handler(req, res) {
@@ -125,7 +183,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: historyError.message });
   }
 
-  const memoryContext = await loadMemoryContext(memoryCount);
+  const memoryContext = await loadMemoryContext(memoryCount, activeUserMessage.content);
   const messages = [
     { role: 'system', content: systemPrompt + memoryContext },
     ...(history || []).map(m => ({ role: m.role, content: m.content })),
