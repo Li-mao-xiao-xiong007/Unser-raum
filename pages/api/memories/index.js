@@ -66,7 +66,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     try {
-      const { title, content, weight, category, tags, source, is_pinned, type: memType, encoded } = req.body;
+      const { title, content, weight, category, tags, source, is_pinned, type: memType, encoded, tone } = req.body;
 
       if (!title || !content) {
         return res.status(400).json({ error: 'title 和 content 为必填字段' });
@@ -85,6 +85,7 @@ export default async function handler(req, res) {
           is_pinned: is_pinned || false,
           type: memType || 'memory',
           encoded: encoded || false,
+          tone: tone || null,
         })
         .select()
         .single();

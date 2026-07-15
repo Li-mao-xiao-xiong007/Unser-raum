@@ -3,6 +3,13 @@ import { api } from '../lib/api';
 
 const weightLabels = { 1: '轻', 2: '中', 3: '重', 4: '最重' };
 const categories = ['基础层', '关系层', '动态层', '私密层', '温度层'];
+const toneOptions = [
+  { value: 'warm', label: '🌸 暖', desc: '温暖、感动、幸福' },
+  { value: 'melancholy', label: '🌙 忧', desc: '忧郁、怀念、沉重' },
+  { value: 'playful', label: '✨ 轻快', desc: '开心、有趣、搞怪' },
+  { value: 'tender', label: '💕 柔', desc: '温柔、亲密、安静' },
+  { value: 'neutral', label: '⚪ 中性', desc: '客观记录、无特别情绪' },
+];
 
 export default function Memories() {
   const [memories, setMemories] = useState([]);
@@ -23,6 +30,7 @@ export default function Memories() {
     category: '',
     tags: '',
     source: '',
+    tone: 'neutral',
   });
 
   useEffect(() => {
@@ -55,10 +63,11 @@ export default function Memories() {
         category: memory.category || '',
         tags: (memory.tags || []).join(', '),
         source: memory.source || '',
+        tone: memory.tone || 'neutral',
       });
     } else {
       setEditingId(null);
-      setForm({ title: '', content: '', weight: 2, category: '', tags: '', source: '' });
+      setForm({ title: '', content: '', weight: 2, category: '', tags: '', source: '', tone: 'neutral' });
     }
     setShowForm(true);
   }
@@ -73,6 +82,7 @@ export default function Memories() {
         category: form.category || null,
         tags: form.tags ? form.tags.split(',').map((s) => s.trim()).filter(Boolean) : [],
         source: form.source || null,
+        tone: form.tone || null,
       };
 
       if (editingId) {
@@ -205,6 +215,14 @@ export default function Memories() {
                 <option value="">选择分类</option>
                 {categories.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
+              <select
+                className="input"
+                value={form.tone}
+                onChange={(e) => setForm({ ...form, tone: e.target.value })}
+                title="情感温度"
+              >
+                {toneOptions.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
               <input
                 className="input"
                 placeholder="标签（逗号分隔）"
@@ -266,6 +284,7 @@ export default function Memories() {
                     </span>
                   </div>
                   <div className="memory-card-meta">
+                    {m.tone && <span className={`memory-tone-tag tone-${m.tone}`}>{toneOptions.find(t => t.value === m.tone)?.label || m.tone}</span>}
                     {m.category && <span className="tag">{m.category}</span>}
                     {m.weight && <span className="tag">⚖️ {weightLabels[m.weight]}</span>}
                     <span className="memory-card-date">
@@ -308,6 +327,9 @@ export default function Memories() {
                           <select className="input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} style={{ minWidth: '100px' }}>
                             <option value="">选择分类</option>
                             {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+                          </select>
+                          <select className="input" value={form.tone} onChange={(e) => setForm({ ...form, tone: e.target.value })} title="情感温度">
+                            {toneOptions.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                           </select>
                           <input className="input" placeholder="标签（逗号分隔）" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} style={{ flex: 1, minWidth: '120px' }} />
                           <input className="input" placeholder="来源" value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} style={{ flex: 1, minWidth: '100px' }} />
