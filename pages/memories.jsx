@@ -10,6 +10,7 @@ export default function Memories() {
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
   const [searchQ, setSearchQ] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [typeFilter, setTypeFilter] = useState('memory');
@@ -165,8 +166,8 @@ export default function Memories() {
         </button>
       </div>
 
-      {/* 表单弹层 */}
-      {showForm && (
+      {/* 表单弹层（仅新增） */}
+      {showForm && !editingId && (
         <div className="card" style={{ marginBottom: '24px', border: '2px solid #D4875E' }}>
           <h3 style={{ marginBottom: '16px', color: '#4A3728' }}>
             {editingId ? '编辑记忆' : '新增记忆'}
@@ -237,51 +238,139 @@ export default function Memories() {
           还没有记忆——要不要记录第一条？
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {memories.map((m) => (
-            <div
-              key={m.id}
-              className="card fade-in-up"
-              style={{ padding: '16px 20px', borderLeft: `3px solid ${m.is_pinned ? '#D4875E' : 'transparent'}` }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
-                {m.is_pinned && <span style={{ fontSize: '0.875rem' }}>📌</span>}
-                <strong style={{ fontSize: '1rem', color: '#3D2E24' }}>{m.title}</strong>
-                <span className={`author-badge ${m.author}`}>
-                  {m.author === 'helle' ? '🌸 Helle' : '🦊 Kruger'}
-                </span>
-                {m.category && <span className="tag">{m.category}</span>}
-                {m.weight && <span className="tag">重量: {weightLabels[m.weight]}</span>}
-              </div>
-              <div style={{
-                fontSize: '0.875rem',
-                color: '#3D2E24',
-                lineHeight: 1.6,
-                marginBottom: '8px',
-                whiteSpace: 'pre-wrap',
-              }}>
-                {m.content.length > 200 ? m.content.slice(0, 200) + '…' : m.content}
-              </div>
-              {m.tags?.length > 0 && (
-                <div style={{ marginBottom: '8px' }}>
-                  {m.tags.map((t, i) => <span key={i} className="tag">{t}</span>)}
+        <div className="memory-card-list">
+          {memories.map((m) => {
+            const isExpanded = expandedId === m.id;
+            const isEditing = editingId === m.id;
+            const contentLong = (m.content || '').length > 200;
+            const preview = contentLong ? m.content.slice(0, 200) + '...' : (m.content || '');
+
+            return (
+              <div
+                key={m.id}
+                className={`memory-card fade-in-up${isExpanded ? ' expanded' : ''}${m.is_pinned ? ' pinned' : ''}`}
+              >
+                {/* 卡片头部：标题行 */}
+                <div
+                  className="memory-card-header"
+                  onClick={() => setExpandedId(isExpanded ? null : m.id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedId(isExpanded ? null : m.id); }}}
+                >
+                  <div className="memory-card-title-row">
+                    {m.is_pinned && <span className="memory-pin">📌</span>}
+                    <strong className="memory-card-title">{m.title}</strong>
+                    <span className={`author-badge ${m.author}`}>
+                      {m.author === 'helle' ? '🌸 Helle' : '🦊 Kruger'}
+                    </span>
+                  </div>
+                  <div className="memory-card-meta">
+                    {m.category && <span className="tag">{m.category}</span>}
+                    {m.weight && <span className="tag">⚖️ {weightLabels[m.weight]}</span>}
+                    <span className="memory-card-date">
+                      {new Date(m.created_at).toLocaleString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    <span className={`memory-expand-icon${isExpanded ? ' open' : ''}`}>▸</span>
+                  </div>
                 </div>
-              )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.75rem', color: '#B8AFA5' }}>
-                  {new Date(m.created_at).toLocaleString('zh-CN')}
-                </span>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <button className="btn btn-sm btn-secondary" onClick={() => openForm(m)}>
-                    编辑
-                  </button>
-                  <button className="btn btn-sm btn-danger" onClick={() => handleDelete(m.id)}>
-                    删除
-                  </button>
+
+                {/* 标签行：折叠时也显示 */}
+                {m.tags?.length > 0 && (
+                  <div className="memory-card-tags">
+                    {m.tags.map((t, i) => <span key={i} className="tag">{t}</span>)}
+                  </div>
+                )}
+
+                {/* 展开内容 */}
+                <div className={`memory-card-body${isExpanded || isEditing ? ' open' : ''}`}>
+                  <div className="memory-card-content">
+                    {isEditing ? (
+                      /* 编辑表单 */
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <input
+                          className="input"
+                          placeholder="标题"
+                          value={form.title}
+                          onChange={(e) => setForm({ ...form, title: e.target.value })}
+                        />
+                        <textarea
+                          className="input"
+                          placeholder="内容（支持 Markdown）"
+                          value={form.content}
+                          onChange={(e) => setForm({ ...form, content: e.target.value })}
+                          style={{ minHeight: '120px' }}
+                        />
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          <select className="input" value={form.weight} onChange={(e) => setForm({ ...form, weight: e.target.value })}>
+                            {Object.entries(weightLabels).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                          </select>
+                          <select className="input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} style={{ minWidth: '100px' }}>
+                            <option value="">选择分类</option>
+                            {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+                          </select>
+                          <input className="input" placeholder="标签（逗号分隔）" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} style={{ flex: 1, minWidth: '120px' }} />
+                          <input className="input" placeholder="来源" value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} style={{ flex: 1, minWidth: '100px' }} />
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                          <button className="btn btn-sm btn-secondary" onClick={(e) => { e.stopPropagation(); setEditingId(null); setShowForm(false); }}>取消</button>
+                          <button className="btn btn-sm btn-primary" onClick={(e) => { e.stopPropagation(); handleSubmit(); }}>保存</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{
+                          fontSize: '0.9375rem',
+                          color: '#3D2E24',
+                          lineHeight: 1.8,
+                          whiteSpace: 'pre-wrap',
+                          marginBottom: '12px',
+                        }}>
+                          {m.content}
+                        </div>
+                        {m.source && (
+                          <div className="memory-card-source">来源：{m.source}</div>
+                        )}
+                      </>
+                    )}
+
+                    <div className="memory-card-actions">
+                      <span style={{ fontSize: '0.75rem', color: '#B8AFA5' }}>
+                        {new Date(m.created_at).toLocaleString('zh-CN')}
+                      </span>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button
+                          className="btn btn-sm btn-secondary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (isEditing) {
+                              setEditingId(null);
+                              setShowForm(false);
+                            } else {
+                              openForm(m);
+                              setExpandedId(m.id);
+                            }
+                          }}
+                        >
+                          {isEditing ? '取消编辑' : '编辑'}
+                        </button>
+                        <button className="btn btn-sm btn-danger" onClick={(e) => { e.stopPropagation(); handleDelete(m.id); }}>
+                          删除
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+
+                {/* 折叠时的预览 */}
+                {!isExpanded && contentLong && (
+                  <div className="memory-card-preview" onClick={() => setExpandedId(m.id)}>
+                    {preview}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </>

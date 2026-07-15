@@ -1303,3 +1303,139 @@ textarea.input {
     padding: var(--space-sm);
   }
 }
+
+/* 记忆卡片 */
+.memory-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.memory-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1.5px solid transparent;
+  overflow: hidden;
+  transition: all var(--duration-fast) var(--ease-out);
+  cursor: default;
+}
+
+.memory-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--wall);
+}
+
+.memory-card.pinned {
+  border-left: 3px solid var(--accent);
+}
+
+.memory-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 18px 10px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.memory-card-header:hover {
+  background: var(--background);
+}
+
+.memory-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.memory-pin {
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.memory-card-title {
+  font-size: 1rem;
+  color: #3D2E24;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.memory-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+}
+
+.memory-card-date {
+  color: #B8AFA5;
+  font-size: 0.75rem;
+}
+
+.memory-expand-icon {
+  color: #B8AFA5;
+  font-size: 0.75rem;
+  transition: transform 0.2s ease;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.memory-expand-icon.open {
+  transform: rotate(90deg);
+}
+
+.memory-card-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding: 0 18px 10px;
+}
+
+.memory-card-preview {
+  padding: 0 18px 12px;
+  font-size: 0.85rem;
+  color: #6B5E53;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  cursor: pointer;
+  opacity: 0.85;
+}
+
+.memory-card-preview:hover {
+  opacity: 1;
+}
+
+.memory-card-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+}
+
+.memory-card-body.open {
+  max-height: 2000px;
+}
+
+.memory-card-content {
+  padding: 0 18px 14px;
+}
+
+.memory-card-source {
+  font-size: 0.8125rem;
+  color: #B8AFA5;
+  margin-bottom: 10px;
+}
+
+.memory-card-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid var(--wall);
+}
