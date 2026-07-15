@@ -1,0 +1,14 @@
+name: Supabase Heartbeat
+
+on:
+  schedule:
+    - cron: '0 8 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping heartbeat endpoint
+        run: |
+          curl -sf -X GET "https://unser-raum.vercel.app/api/heartbeat" && echo " OK" || echo " FAILED"
