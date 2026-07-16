@@ -260,8 +260,6 @@ export default function Memories() {
           {memories.map((m) => {
             const isExpanded = expandedId === m.id;
             const isEditing = editingId === m.id;
-            const contentLong = (m.content || '').length > 200;
-            const preview = contentLong ? m.content.slice(0, 200) + '...' : (m.content || '');
 
             return (
               <div
@@ -384,12 +382,6 @@ export default function Memories() {
                   </div>
                 </div>
 
-                {/* 折叠时的预览 */}
-                {!isExpanded && contentLong && (
-                  <div className="memory-card-preview" onClick={() => setExpandedId(m.id)}>
-                    {preview}
-                  </div>
-                )}
               </div>
             );
           })}

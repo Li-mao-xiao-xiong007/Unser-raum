@@ -1413,20 +1413,6 @@ textarea.input {
   padding: 0 18px 10px;
 }
 
-.memory-card-preview {
-  padding: 0 18px 12px;
-  font-size: 0.85rem;
-  color: #6B5E53;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  cursor: pointer;
-  opacity: 0.85;
-}
-
-.memory-card-preview:hover {
-  opacity: 1;
-}
-
 .memory-card-body {
   max-height: 0;
   overflow: hidden;
