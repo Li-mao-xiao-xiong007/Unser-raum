@@ -81,7 +81,7 @@ async function loadMemoryContext(memoryCount, userMessage) {
       const tone = m.tone || 'neutral';
       if (tone === 'cold') return m._score >= 2;      // 主动提起才出现
       if (tone === 'neutral') return m._score > 0 || m.is_pinned; // 仅相关性检索
-      return true;                                      // warm / playful 正常浮现
+      return true;                                      // warm / light 正常浮现
     })
     .map(m => {
       // 暖记忆任何上下文加权
@@ -98,7 +98,7 @@ async function loadMemoryContext(memoryCount, userMessage) {
 
   const selected = scored.slice(0, memoryCount);
 
-  const toneLabel = { warm: '暖', playful: '轻快', neutral: '中性', cold: '冷' };
+  const toneLabel = { warm: '暖', light: '轻快', neutral: '中性', cold: '冷' };
   return '\n\n## 关键记忆\n' +
     selected.map((m, i) => {
       const t = m.tone ? `[${toneLabel[m.tone] || m.tone}]` : '';
