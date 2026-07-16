@@ -4,11 +4,10 @@ import { api } from '../lib/api';
 const weightLabels = { 1: '轻', 2: '中', 3: '重', 4: '最重' };
 const categories = ['基础层', '关系层', '动态层', '私密层', '温度层'];
 const toneOptions = [
-  { value: 'warm', label: '🌸 暖', desc: '温暖、感动、幸福' },
-  { value: 'melancholy', label: '🌙 忧', desc: '忧郁、怀念、沉重' },
-  { value: 'playful', label: '✨ 轻快', desc: '开心、有趣、搞怪' },
-  { value: 'tender', label: '💕 柔', desc: '温柔、亲密、安静' },
-  { value: 'neutral', label: '⚪ 中性', desc: '客观记录、无特别情绪' },
+  { value: 'warm', label: '💕 暖', desc: '关系里程碑、心动时刻' },
+  { value: 'playful', label: '✨ 轻快', desc: '互怼、搞怪日常' },
+  { value: 'neutral', label: '⚪ 中性', desc: '冷知识、笔记、日程' },
+  { value: 'cold', label: '❄️ 冷', desc: '冲突、误解、哭过的日子' },
 ];
 
 export default function Memories() {

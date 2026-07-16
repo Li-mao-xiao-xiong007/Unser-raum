@@ -1384,10 +1384,9 @@ textarea.input {
   white-space: nowrap;
 }
 .tone-warm { background: #FDE8E8; color: #C0392B; }
-.tone-melancholy { background: #E8EAF6; color: #5C6BC0; }
 .tone-playful { background: #FFF8E1; color: #F9A825; }
-.tone-tender { background: #FCE4EC; color: #AD1457; }
 .tone-neutral { background: #F5F5F5; color: #9E9E9E; }
+.tone-cold { background: #E3F2FD; color: #1565C0; }
 
 .memory-card-date {
   color: #B8AFA5;

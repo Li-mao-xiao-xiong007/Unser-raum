@@ -60,7 +60,7 @@ async function loadMemoryContext(memoryCount, userMessage) {
 
   const { data: allMemories } = await supabase
     .from('memories')
-    .select('title, content, category, tags, weight, is_pinned, created_at')
+    .select('title, content, category, tags, weight, is_pinned, tone, created_at')
     .eq('type', 'memory')
     .is('deleted_at', null)
     .order('is_pinned', { ascending: false })
@@ -71,10 +71,23 @@ async function loadMemoryContext(memoryCount, userMessage) {
 
   const keywords = extractKeywords(userMessage);
 
-  const scored = allMemories.map(m => ({
-    ...m,
-    _score: keywords.length > 0 ? matchScore(m, keywords) : 0,
-  }));
+  const scored = allMemories
+    .map(m => ({
+      ...m,
+      _score: keywords.length > 0 ? matchScore(m, keywords) : 0,
+    }))
+    // 四档温度检索策略：冷记忆默认藏，中性仅相关才出，暖/轻快正常浮现
+    .filter(m => {
+      const tone = m.tone || 'neutral';
+      if (tone === 'cold') return m._score >= 2;      // 主动提起才出现
+      if (tone === 'neutral') return m._score > 0 || m.is_pinned; // 仅相关性检索
+      return true;                                      // warm / playful 正常浮现
+    })
+    .map(m => {
+      // 暖记忆任何上下文加权
+      if ((m.tone || 'neutral') === 'warm') m._score += 2;
+      return m;
+    });
 
   scored.sort((a, b) => {
     if (b._score !== a._score) return b._score - a._score;
@@ -85,8 +98,12 @@ async function loadMemoryContext(memoryCount, userMessage) {
 
   const selected = scored.slice(0, memoryCount);
 
+  const toneLabel = { warm: '暖', playful: '轻快', neutral: '中性', cold: '冷' };
   return '\n\n## 关键记忆\n' +
-    selected.map((m, i) => `${i + 1}. [${m.category || '未分类'}] ${m.title}: ${m.content}`).join('\n');
+    selected.map((m, i) => {
+      const t = m.tone ? `[${toneLabel[m.tone] || m.tone}]` : '';
+      return `${i + 1}. ${t}[${m.category || '未分类'}] ${m.title}: ${m.content}`;
+    }).join('\n');
 }
 
 export default async function handler(req, res) {
