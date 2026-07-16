@@ -15,40 +15,69 @@ function buildSettings(rows) {
   return settings;
 }
 
+// 中文常见停用片段（n-gram 产生的高频噪声）
+const STOP_NGRAMS = new Set([
+  '的', '了', '是', '在', '我', '你', '他', '她', '它', '们', '这', '那', '都', '也', '就', '还',
+  '的话', '的是', '了一', '了一', '的话', '一个', '什么', '怎么', '可以', '现在', '我们', '你们',
+  '他们', '因为', '所以', '但是', '如果', '虽然', '已经', '的话', '的话',
+]);
+
 function extractKeywords(text) {
   if (!text) return [];
   const cleaned = text
     .replace(/[，。！？、；：""''（）【】《》\s,.!?;:"'()\[\]<>\-—…]/g, ' ')
     .trim()
     .toLowerCase();
+  // 英文/数字词
   const words = cleaned.split(/\s+/).filter(w => w.length >= 2);
 
-  if (text.length <= 100) {
-    const raw = text.toLowerCase();
-    for (let n = 2; n <= 4; n++) {
-      for (let i = 0; i <= raw.length - n; i++) {
-        words.push(raw.slice(i, i + n));
-      }
+  // 中文 n-gram（2~4 字）：长文本只取前 500 字做 n-gram，避免爆炸
+  const raw = text.toLowerCase().slice(0, 500);
+  const ngramSet = new Set();
+  for (let n = 2; n <= 4; n++) {
+    for (let i = 0; i <= raw.length - n; i++) {
+      const g = raw.slice(i, i + n);
+      // 跳过含标点/空格的片段 和 纯停用片段
+      if (/[，。！？、；：""''（）【】《》\s,.!?;:"'()\[\]<>\-—…]/.test(g)) continue;
+      if (STOP_NGRAMS.has(g)) continue;
+      ngramSet.add(g);
     }
   }
+  words.push(...ngramSet);
 
-  return [...new Set(words)];
+  // 去重 + 限制总数上限（性能保护）
+  const unique = [...new Set(words)];
+  return unique.slice(0, 80);
 }
 
 function matchScore(memory, keywords) {
   let score = 0;
   const tags = (memory.tags || []).map(t => t.toLowerCase());
   const category = (memory.category || '').toLowerCase();
+  const title = (memory.title || '').toLowerCase();
+  const content = (memory.content || '').toLowerCase();
+  let contentHits = 0;
 
   for (const kw of keywords) {
     if (kw.length < 2) continue;
+    // category 命中 +3
     if (category && (kw === category || category.includes(kw) || kw.includes(category))) {
       score += 3;
     }
+    // tags 命中 +2
     for (const tag of tags) {
       if (kw === tag || tag.includes(kw) || kw.includes(tag)) {
         score += 2;
       }
+    }
+    // title 命中 +3（标题最关键）
+    if (title && title.includes(kw)) {
+      score += 3;
+    }
+    // content 命中 +1，单条记忆封顶 +5（避免长记忆刷分）
+    if (content && content.includes(kw) && contentHits < 5) {
+      score += 1;
+      contentHits += 1;
     }
   }
 
