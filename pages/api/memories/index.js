@@ -17,6 +17,7 @@ export default async function handler(req, res) {
         q,
         pinned,
         type,
+        status,
       } = req.query;
 
       const pageNum = Math.max(1, parseInt(page, 10));
@@ -44,6 +45,7 @@ export default async function handler(req, res) {
       if (category) query = query.eq('category', category);
       if (tag) query = query.contains('tags', [tag]);
       if (pinned === 'true') query = query.eq('is_pinned', true);
+      if (status) query = query.eq('status', status);
       if (q) query = query.or(`title.ilike.%${q}%,content.ilike.%${q}%`);
 
       const { data, error, count } = await query;
@@ -66,7 +68,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     try {
-      const { title, content, weight, category, tags, source, is_pinned, type: memType, encoded, tone } = req.body;
+      const { title, content, weight, category, tags, source, is_pinned, type: memType, encoded, tone, status } = req.body;
 
       if (!title || !content) {
         return res.status(400).json({ error: 'title 和 content 为必填字段' });
@@ -86,6 +88,7 @@ export default async function handler(req, res) {
           type: memType || 'memory',
           encoded: encoded || false,
           tone: tone || null,
+          status: status || 'active',
         })
         .select()
         .single();

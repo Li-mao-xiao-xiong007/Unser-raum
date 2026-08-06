@@ -89,7 +89,7 @@ async function loadMemoryContext(memoryCount, userMessage) {
 
   const { data: allMemories } = await supabase
     .from('memories')
-    .select('title, content, category, tags, weight, is_pinned, tone, created_at')
+    .select('title, content, category, tags, weight, is_pinned, tone, status, created_at')
     .eq('type', 'memory')
     .is('deleted_at', null)
     .order('is_pinned', { ascending: false })
@@ -105,16 +105,20 @@ async function loadMemoryContext(memoryCount, userMessage) {
       ...m,
       _score: keywords.length > 0 ? matchScore(m, keywords) : 0,
     }))
-    // 四档温度检索策略：冷记忆默认藏，中性仅相关才出，暖/轻快正常浮现
+    // 四档温度 + 翻篇三态检索策略
     .filter(m => {
       const tone = m.tone || 'neutral';
-      if (tone === 'cold') return m._score >= 2;      // 主动提起才出现
-      if (tone === 'neutral') return m._score > 0 || m.is_pinned; // 仅相关性检索
-      return true;                                      // warm / light 正常浮现
+      const status = m.status || 'active';
+      if (status === 'sunk') return m._score >= 2;      // 沉底：主动提起才翻出
+      if (tone === 'cold') return m._score >= 2;        // 冷：主动提起才出现
+      if (tone === 'neutral') return m._score > 0 || m.is_pinned; // 中性：仅相关性检索
+      return true;                                      // warm / light / frozen 正常浮现
     })
     .map(m => {
-      // 暖记忆任何上下文加权
+      // 暖记忆加权 +2
       if ((m.tone || 'neutral') === 'warm') m._score += 2;
+      // 固化记忆永久高位 +8
+      if ((m.status || 'active') === 'frozen') m._score += 8;
       return m;
     });
 
@@ -128,10 +132,12 @@ async function loadMemoryContext(memoryCount, userMessage) {
   const selected = scored.slice(0, memoryCount);
 
   const toneLabel = { warm: '暖', light: '轻快', neutral: '中性', cold: '冷' };
+  const statusLabel = { frozen: '⭐固化', sunk: '📥沉底' };
   return '\n\n## 关键记忆\n' +
     selected.map((m, i) => {
       const t = m.tone ? `[${toneLabel[m.tone] || m.tone}]` : '';
-      return `${i + 1}. ${t}[${m.category || '未分类'}] ${m.title}: ${m.content}`;
+      const s = m.status && m.status !== 'active' ? `[${statusLabel[m.status] || m.status}]` : '';
+      return `${i + 1}. ${t}${s}[${m.category || '未分类'}] ${m.title}: ${m.content}`;
     }).join('\n');
 }
 

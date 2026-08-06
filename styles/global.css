@@ -1388,6 +1388,18 @@ textarea.input {
 .tone-neutral { background: #F5F5F5; color: #9E9E9E; }
 .tone-cold { background: #E3F2FD; color: #1565C0; }
 
+/* 翻篇三态标签 */
+.memory-status-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.status-sunk { background: #F3E5F5; color: #7B1FA2; }
+.status-frozen { background: #FFF3E0; color: #E65100; }
+
 .memory-card-date {
   color: #B8AFA5;
   font-size: 0.75rem;

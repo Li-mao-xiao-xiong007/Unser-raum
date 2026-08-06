@@ -9,6 +9,11 @@ const toneOptions = [
   { value: 'neutral', label: '⚪ 中性', desc: '冷知识、笔记、日程' },
   { value: 'cold', label: '❄️ 冷', desc: '冲突、误解、哭过的日子' },
 ];
+const statusOptions = [
+  { value: 'active', label: '🟢 鲜活', desc: '日常浮现' },
+  { value: 'sunk', label: '📥 沉底', desc: '翻篇了，主动提起才出现' },
+  { value: 'frozen', label: '⭐ 固化', desc: '里程碑/命名石，永久高位' },
+];
 
 export default function Memories() {
   const [memories, setMemories] = useState([]);
@@ -20,6 +25,7 @@ export default function Memories() {
   const [searchQ, setSearchQ] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [typeFilter, setTypeFilter] = useState('memory');
+  const [statusFilter, setStatusFilter] = useState('');
 
   // 表单状态
   const [form, setForm] = useState({
@@ -34,7 +40,7 @@ export default function Memories() {
 
   useEffect(() => {
     loadMemories();
-  }, [searchQ, filterCategory, typeFilter]);
+  }, [searchQ, filterCategory, typeFilter, statusFilter]);
 
   async function loadMemories() {
     try {
@@ -43,6 +49,7 @@ export default function Memories() {
       if (searchQ) params.q = searchQ;
       if (filterCategory) params.category = filterCategory;
       if (typeFilter) params.type = typeFilter;
+      if (statusFilter) params.status = statusFilter;
       const res = await api.getMemories(params);
       setMemories(res.data || []);
     } catch (err) {
@@ -107,6 +114,17 @@ export default function Memories() {
     }
   }
 
+  // 翻篇机制：三态切换
+  async function handleStatusChange(id, status, confirmMsg) {
+    if (confirmMsg && !confirm(confirmMsg)) return;
+    try {
+      await api.editMemory(id, { status });
+      await loadMemories();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   if (loading && memories.length === 0) {
     return (
       <>
@@ -126,7 +144,7 @@ export default function Memories() {
       <p className="sub-title" style={{ marginBottom: '16px' }}>我们一起留下的痕迹</p>
 
       {/* 类型筛选标签 */}
-      <div className="type-tabs" style={{ marginBottom: '24px' }}>
+      <div className="type-tabs" style={{ marginBottom: '12px' }}>
         <button
           className={`type-tab ${typeFilter === 'memory' ? 'active' : ''}`}
           onClick={() => setTypeFilter('memory')}
@@ -145,6 +163,25 @@ export default function Memories() {
         >
           📋 全部
         </button>
+      </div>
+
+      {/* 状态筛选标签（翻篇三态） */}
+      <div className="type-tabs" style={{ marginBottom: '24px' }}>
+        <button
+          className={`type-tab ${statusFilter === '' ? 'active' : ''}`}
+          onClick={() => setStatusFilter('')}
+        >
+          全部状态
+        </button>
+        {statusOptions.map((s) => (
+          <button
+            key={s.value}
+            className={`type-tab ${statusFilter === s.value ? 'active' : ''}`}
+            onClick={() => setStatusFilter(s.value)}
+          >
+            {s.label}
+          </button>
+        ))}
       </div>
 
       {error && (
@@ -281,6 +318,7 @@ export default function Memories() {
                     </span>
                   </div>
                   <div className="memory-card-meta">
+                    {m.status && m.status !== 'active' && <span className={`memory-status-tag status-${m.status}`}>{statusOptions.find(s => s.value === m.status)?.label || m.status}</span>}
                     {m.tone && <span className={`memory-tone-tag tone-${m.tone}`}>{toneOptions.find(t => t.value === m.tone)?.label || m.tone}</span>}
                     {m.category && <span className="tag">{m.category}</span>}
                     {m.weight && <span className="tag">⚖️ {weightLabels[m.weight]}</span>}
@@ -357,7 +395,42 @@ export default function Memories() {
                       <span style={{ fontSize: '0.75rem', color: '#B8AFA5' }}>
                         {new Date(m.created_at).toLocaleString('zh-CN')}
                       </span>
-                      <div style={{ display: 'flex', gap: '6px' }}>
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        {/* 翻篇三态操作 */}
+                        {m.status === 'sunk' ? (
+                          <button
+                            className="btn btn-sm btn-secondary"
+                            onClick={(e) => { e.stopPropagation(); handleStatusChange(m.id, 'active'); }}
+                            title="翻回鲜活，恢复日常浮现"
+                          >
+                            ↺ 翻回来
+                          </button>
+                        ) : (
+                          <button
+                            className="btn btn-sm btn-secondary"
+                            onClick={(e) => { e.stopPropagation(); handleStatusChange(m.id, 'sunk', '翻篇后不再主动浮现，确定吗？'); }}
+                            title="翻篇：不再主动提及，主动提起才出现"
+                          >
+                            📥 翻篇
+                          </button>
+                        )}
+                        {m.status !== 'frozen' ? (
+                          <button
+                            className="btn btn-sm btn-secondary"
+                            onClick={(e) => { e.stopPropagation(); handleStatusChange(m.id, 'frozen', '固化为命名石后永久高位浮现，确定吗？'); }}
+                            title="固化：里程碑/命名石，永久高位"
+                          >
+                            ⭐ 固化
+                          </button>
+                        ) : (
+                          <button
+                            className="btn btn-sm btn-secondary"
+                            onClick={(e) => { e.stopPropagation(); handleStatusChange(m.id, 'active'); }}
+                            title="解除固化，回到鲜活"
+                          >
+                            🔓 解除
+                          </button>
+                        )}
                         <button
                           className="btn btn-sm btn-secondary"
                           onClick={(e) => {

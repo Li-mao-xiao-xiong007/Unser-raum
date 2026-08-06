@@ -29,7 +29,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'PUT') {
     try {
-      const { title, content, weight, category, tags, source, is_pinned, is_read, type, encoded, tone } = req.body;
+      const { title, content, weight, category, tags, source, is_pinned, is_read, type, encoded, tone, status } = req.body;
       const updates = {};
 
       if (title !== undefined) updates.title = title;
@@ -43,6 +43,7 @@ export default async function handler(req, res) {
       if (type !== undefined) updates.type = type;
       if (encoded !== undefined) updates.encoded = encoded;
       if (tone !== undefined) updates.tone = tone;
+      if (status !== undefined) updates.status = status;
       updates.updated_at = new Date().toISOString();
 
       const { data, error } = await supabase
